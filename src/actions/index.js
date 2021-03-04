@@ -1,19 +1,37 @@
+import _ from "lodash";
 import jsonPlaceholder from "../api/jsonPlaceholder";
 
-export const fetchPosts = () => async dispatch => {
-  const response = await jsonPlaceholder('/posts')
+
+/*
+- Whenever an action creator is called from inside of another action creator we
+need make sure to dispatch the result of it
+- getState we get as a result of fetching data and then dispatching it
+- Notice await is used in fetching post, but isn't in case of getting a user.
+To fetch a user we need to get a posts list first though we don't have logic 
+relating to a user so we don't need to await.*/
+export const fetchPostsAndUsers = () => async (dispatch, getState) => {
+  await dispatch(fetchPosts());
+    
+  _.chain(getState().posts)
+      .map('userId')
+      .uniq()
+      .forEach(id => dispatch(fetchUser(id)))
+      .value()
+};
+export const fetchPosts = () => async (dispatch) => {
+  const response = await jsonPlaceholder("/posts");
   dispatch({
-    type: 'FETCH_POSTS',
-    payload: response.data
-  })
-}
-export const fetchUser = id => async dispatch => {
-  const response = await jsonPlaceholder(`/users/${id}`)
+    type: "FETCH_POSTS",
+    payload: response.data,
+  });
+};
+export const fetchUser = (id) => async (dispatch) => {
+  const response = await jsonPlaceholder(`/users/${id}`);
   dispatch({
-    type: 'FETCH_USER',
-    payload: response.data
-  })
-}
+    type: "FETCH_USER",
+    payload: response.data,
+  });
+};
 
 /*MIND the syntax for fetching data is incorrect.
   const response = await jsonPlaceholder.get('/posts')
